@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model accounts {
+  account_id   Int            @id @default(autoincrement())
+  title        String         @db.VarChar(50) @unique
+  description  String?
+  user_id      Int?
+  users        users?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  transactions transactions[]
+}
+
+model categories_transactions {
+  category_transaction_id Int                  @id @default(autoincrement())
+  title                   String
+  type_of_transaction     type_of_transaction
+  user_id                 Int
+  users                   users                @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  transactions            transactions[]
+}
+
+model transactions {
+  transaction_id          Int                      @id @default(autoincrement())
+  amount                  Int
+  description             String
+  type_of_transaction     type_of_transaction
+  finish                  Boolean
+  account_id              Int
+  category_transaction_id Int
+  accounts                accounts                 @relation(fields: [account_id], references: [account_id], onDelete: NoAction, onUpdate: NoAction)
+  categories_transactions categories_transactions? @relation(fields: [category_transaction_id], references: [category_transaction_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  user_id                 Int                       @id @default(autoincrement())
+  google_user_id          String                    @unique @db.VarChar(255)
+  google_name             String                    @db.VarChar(255)
+  email                   String                    @unique @db.VarChar(255)
+  avatar_url              String?                   @db.VarChar(255)
+  creation_date           DateTime?                 @default(now()) @db.Timestamp(6)
+  accounts                accounts[]
+  categories_transactions categories_transactions[]
+}
+
+view users_balances {
+  user_id Int @unique
+  total_income Int
+  total_expense Int
+  balance Int
+}
+
+view accounts_balances {
+  account_id Int @unique
+  title String @db.VarChar(50) @unique
+  description  String?
+  total_income Int
+  total_expense Int
+  balance Int
+}
+
+enum type_of_transaction {
+  expense
+  income
+}
